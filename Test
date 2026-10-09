@@ -4,6 +4,7 @@ local INTERVAL = 15
 
 local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
+local Players = game:GetService("Players")
 
 local startTime = os.time()
 local gameNameCache = {}
@@ -33,18 +34,27 @@ local function getUptime()
     return string.format("%02dh %02dm %02ds", hours, minutes, seconds)
 end
 
+local function getUserName()
+    local player = Players.LocalPlayer
+    if player then
+        return player.Name
+    end
+    return "Unknown"
+end
+
 local function sendWebhook(isInGame)
     local currentGameName = getGameName(game.PlaceId)
+    local userName = getUserName()
 
     local embed
 
     if isInGame then
         embed = {
             title = "🎮 Currently Playing",
-            description = "**" .. currentGameName .. "** 🚗💨",
+            description = "**Driving Empire** 🚗💨",
             color = 5763719, -- green
             fields = {
-                { name = "📍 Game", value = "`" .. currentGameName .. "`", inline = true },
+                { name = "👤 User", value = "`" .. userName .. "`", inline = true },
                 { name = "🟢 Status", value = "**In Game**", inline = true },
                 { name = "⏱️ Uptime", value = "`" .. getUptime() .. "`", inline = true }
             },
@@ -60,8 +70,8 @@ local function sendWebhook(isInGame)
             description = "Not in **Driving Empire** right now",
             color = 15548997, -- red
             fields = {
-                { name = "📍 Game", value = "`" .. currentGameName .. "`", inline = true },
-                { name = "🔴 Status", value = "**Not in Driving Empire**", inline = true },
+                { name = "👤 User", value = "`" .. userName .. "`", inline = true },
+                { name = "🔴 Status", value = "Playing **" .. currentGameName .. "**", inline = true },
                 { name = "⏱️ Uptime", value = "`" .. getUptime() .. "`", inline = true }
             },
             footer = {
