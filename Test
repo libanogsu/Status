@@ -1,0 +1,98 @@
+local GAME_ID = 3351674303
+local WEBHOOK = "https://discord.com/api/webhooks/1558077380738682971/R6nVZ5QKY5lPtbu1OjUaMINeiz5iak3X5F5JExfFii67l4_FHo-5bvRuHysh7HinTspl"
+local INTERVAL = 15
+
+local HttpService = game:GetService("HttpService")
+local MarketplaceService = game:GetService("MarketplaceService")
+
+local startTime = os.time()
+local gameNameCache = {}
+
+local function getGameName(placeId)
+    if gameNameCache[placeId] then
+        return gameNameCache[placeId]
+    end
+
+    local success, info = pcall(function()
+        return MarketplaceService:GetProductInfo(placeId)
+    end)
+
+    if success and info and info.Name then
+        gameNameCache[placeId] = info.Name
+        return info.Name
+    end
+
+    return "Unknown Game"
+end
+
+local function getUptime()
+    local elapsed = os.time() - startTime
+    local hours = math.floor(elapsed / 3600)
+    local minutes = math.floor((elapsed % 3600) / 60)
+    local seconds = elapsed % 60
+    return string.format("%02dh %02dm %02ds", hours, minutes, seconds)
+end
+
+local function sendWebhook(isInGame)
+    local currentGameName = getGameName(game.PlaceId)
+
+    local embed
+
+    if isInGame then
+        embed = {
+            title = "🎮 Currently Playing",
+            description = "**" .. currentGameName .. "** 🚗💨",
+            color = 5763719, -- green
+            fields = {
+                { name = "📍 Game", value = "`" .. currentGameName .. "`", inline = true },
+                { name = "🟢 Status", value = "**In Game**", inline = true },
+                { name = "⏱️ Uptime", value = "`" .. getUptime() .. "`", inline = true }
+            },
+            footer = {
+                text = "Roblox Status Tracker",
+                icon_url = "https://upload.wikimedia.org/wikipedia/commons/c/c7/Roblox_logo.svg"
+            },
+            timestamp = DateTime.now():ToIsoDate()
+        }
+    else
+        embed = {
+            title = "💤 Not Playing",
+            description = "Not in **Driving Empire** right now",
+            color = 15548997, -- red
+            fields = {
+                { name = "📍 Game", value = "`" .. currentGameName .. "`", inline = true },
+                { name = "🔴 Status", value = "**Not in Driving Empire**", inline = true },
+                { name = "⏱️ Uptime", value = "`" .. getUptime() .. "`", inline = true }
+            },
+            footer = {
+                text = "Roblox Status Tracker",
+                icon_url = "https://upload.wikimedia.org/wikipedia/commons/c/c7/Roblox_logo.svg"
+            },
+            timestamp = DateTime.now():ToIsoDate()
+        }
+    end
+
+    local payload = {
+        username = "Roblox Tracker",
+        avatar_url = "https://upload.wikimedia.org/wikipedia/commons/c/c7/Roblox_logo.svg",
+        embeds = { embed }
+    }
+
+    local success, err = pcall(function()
+        request({
+            Url = WEBHOOK,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = HttpService:JSONEncode(payload)
+        })
+    end)
+
+    if not success then
+        warn("Webhook failed: " .. tostring(err))
+    end
+end
+
+while true do
+    sendWebhook(game.PlaceId == GAME_ID)
+    task.wait(INTERVAL)
+end
